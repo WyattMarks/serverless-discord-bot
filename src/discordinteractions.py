@@ -56,5 +56,9 @@ async def finishMessage(token, text):
     head = {
         'content-type': 'application/json',
 	  }
-    response = await fetch(f'https://discord.com/api/webhooks/{DISCORD_APP_ID}/{token}/messages/@original', {'method': 'PATCH', 'headers': head, 'body': JSON.stringify({'type': InteractionResponseType.UPDATE_MESSAGE, 'content': text})})
+    response = await fetch(f'https://discord.com/api/webhooks/{DISCORD_APP_ID}/{token}/messages/@original', {
+        'method': 'PATCH', 
+        'headers': head, 
+        'body': JSON.stringify({'type': InteractionResponseType.UPDATE_MESSAGE, 'content': text})
+    })
     return await response.json()

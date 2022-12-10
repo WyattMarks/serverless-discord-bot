@@ -1,5 +1,5 @@
 
-async def getRedditPosts(sub):
+async def getRedditPosts(sub): # Get hot posts list
 	response = await fetch(f'https://www.reddit.com/r/{sub}/hot.json', {
 		'headers': {
 		'User-Agent': 'data:positronic:v0.0.1',
@@ -10,25 +10,25 @@ async def getRedditPosts(sub):
 	posts = []
 	
 	for i in range(len(data.data.children)):
-		try:
+		try: # Try statements because different post types are formatted differently
 			if data.data.children[i]['is_gallery']:
-				continue
+				continue # Galleries don't embed nicely
 		except:
 			pass
 
-		try:
+		try: # Video post
 			posts.append(data.data.children[i]['data']['secure_media']['reddit_video']['fallback_url'])
 			continue
 		except:
 			pass
 
-		try: 
+		try: # Video post
 			posts.append(data.data.children[i]['data']['media']['reddit_video']['fallback_url'])
 			continue
 		except:
 			pass
 
-		try:
+		try: # Image post
 			posts.append(data.data.children[i]['data']['url'])
 		except:
 			pass

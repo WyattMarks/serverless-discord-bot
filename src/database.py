@@ -2,10 +2,10 @@
 
 
 async def save(id, value):
-	url = f'{UPSTASH_REDIS_URL}/set/{id}/{encodeURIComponent(value)}?_token={UPSTASH_REDIS_TOKEN}'
+	url = f'{UPSTASH_REDIS_URL}/set/{id}/{encodeURIComponent(value)}?_token={UPSTASH_REDIS_TOKEN}' # Save the conversation history
 	response = await fetch(url)
 
-	url = f'{UPSTASH_REDIS_URL}/expire/{id}/600?_token={UPSTASH_REDIS_TOKEN}'
+	url = f'{UPSTASH_REDIS_URL}/expire/{id}/600?_token={UPSTASH_REDIS_TOKEN}' # Set the expiration time to 600s 
 	response = await fetch(url)
 	return await response.json()
 
