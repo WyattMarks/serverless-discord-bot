@@ -20,14 +20,14 @@ async def earth(message, event):
 	posts = await getRedditPosts('EarthPorn')
 	return Reply(f'{posts[int(len(posts) * Math.random ())]}')
 
+
+
 async def finish_chat(token, message, id):
 	prompt = f"The following is a conversation with Data from Star Trek. Data is being very helpful.\n\nHuman: {message}\nData:"
 	reply_text = await chatCompletion(prompt)
 
 	await finishMessage(token, f'> {message}\n\n{reply_text.strip()}')
 	await database.save(id, prompt + reply_text + '\nHuman:')
-
-	
 
 async def chat(message, event):
 	token = message['token']
@@ -39,6 +39,8 @@ async def chat(message, event):
 
 	event.waitUntil(finish_chat(token, message, id))
 	return DeferReply()
+
+
 
 async def reply_chat(token, message, id):
 	prompt = await database.get(id)
