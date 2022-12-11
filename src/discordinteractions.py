@@ -62,3 +62,28 @@ async def finishMessage(token, text):
         'body': JSON.stringify({'type': InteractionResponseType.UPDATE_MESSAGE, 'content': text})
     })
     return await response.json()
+
+async def finishMessageWithAttachments(token, text, files):
+    # Uploading attachments requires the FormData response (multipart/formdata)
+    form = __new__(FormData())
+     
+    # The normal JSON response dict is now in the form as 'payload_json'
+    payload_json = {
+		'type': InteractionResponseType.UPDATE_MESSAGE,
+		"attachments": [], # Leave empty for now so we can generate the correct amount
+		'content': f'> {text}'
+	}
+	
+    for i in range(len(files)):
+        form.append(f'files[{i}]', __new__(Blob([files[i]['data']])), files[i]['filename']) # Put the actual file data into the formdata
+        payload_json['attachments'].append( {'id': i} ) # Add the attachment to the attachments list
+
+    # Append the payload
+    form.append('payload_json', JSON.stringify(payload_json))
+
+    # Send it off
+    response = await fetch(f'https://discord.com/api/webhooks/{DISCORD_APP_ID}/{token}/messages/@original', {
+		'method': 'PATCH', 
+		'body': form
+	})
+    return await response.json()

@@ -1,4 +1,4 @@
-from src.discordinteractions import Reply, JSONResponse, DeferReply, InteractionResponseType, finishMessage
+from src.discordinteractions import Reply, JSONResponse, DeferReply, InteractionResponseType, finishMessage, finishMessageWithAttachments
 import src.database as database
 from src.openai import chatCompletion, generateImage
 from src.reddit import getRedditPosts
@@ -73,33 +73,21 @@ async def invite_link(message, event):
 	return JSONResponse({'type': 4, 'data': {'content': url, 'flags': 64}}) # Make this message appear only for the sender
 
 async def upload_image(token, message, id):
-	form = __new__(FormData())
-	form.append('payload_json', JSON.stringify({
-		'type': InteractionResponseType.UPDATE_MESSAGE,
-		"attachments": [{
-			"id": 0,
-		}],
-		'content': f'> {message}'
-	}))
-	
-	image_data = await generateImage(message)
+	image_data = await generateImage(message) # request an image from OpenAI with our prompt
 
-	if not image_data:
+	if not image_data: # sometimes OpenAI refuses to generate data because of 'content policy'
 		await finishMessage(token, 'Sorry, I cannot generate images of that nature')
 		return 
 
-	form.append('files[0]', __new__(Blob([image_data])), 'file.png')
+	files = [{'data': image_data, 'filename': 'file.png'}] # File list for our attachments function
 
-	response = await fetch(f'https://discord.com/api/webhooks/{DISCORD_APP_ID}/{token}/messages/@original', {
-		'method': 'PATCH', 
-		'body': form
-	})
-	response = await response.json()
-	await database.append(f'{id}_images', btoa(response['attachments'][0]['url']) + ',')
+	response = await finishMessageWithAttachments(token, message, files) # Upload response
+	await database.append(f'{id}_images', btoa(response['attachments'][0]['url']) + ',') # Log image link to database
 		
 
 
 async def image(message, event):
+	# same method as normal to get id and token and message text, then defer the reply
 	token = message['token']
 	try:
 		id = message['user']['id']
