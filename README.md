@@ -7,4 +7,4 @@ It has the following commands:
 - /invite - Generate an invite link for the bot
 - /chat - Talk with the bot using OpenAI
 - /reply - Continue a conversation by fetching conversation history from an Updash database
-
+- /image - Generate an image using DALL-E
