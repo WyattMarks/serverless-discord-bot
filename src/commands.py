@@ -1,6 +1,6 @@
 from src.discordinteractions import Reply, JSONResponse, DeferReply, InteractionResponseType, finishMessage
 import src.database as database
-from src.openai import chatCompletion
+from src.openai import chatCompletion, generateImage
 from src.reddit import getRedditPosts
 
 
@@ -72,6 +72,44 @@ async def invite_link(message, event):
 	url = f'https://discord.com/oauth2/authorize?client_id={DISCORD_APP_ID}&scope=applications.commands'
 	return JSONResponse({'type': 4, 'data': {'content': url, 'flags': 64}}) # Make this message appear only for the sender
 
+async def upload_image(token, message, id):
+	form = __new__(FormData())
+	form.append('payload_json', JSON.stringify({
+		'type': InteractionResponseType.UPDATE_MESSAGE,
+		"attachments": [{
+			"id": 0,
+		}],
+		'content': f'> {message}'
+	}))
+	
+	image_data = await generateImage(message)
+
+	if not image_data:
+		await finishMessage(token, 'Sorry, I cannot generate images of that nature')
+		return 
+
+	form.append('files[0]', __new__(Blob([image_data])), 'file.png')
+
+	response = await fetch(f'https://discord.com/api/webhooks/{DISCORD_APP_ID}/{token}/messages/@original', {
+		'method': 'PATCH', 
+		'body': form
+	})
+	response = await response.json()
+	await database.append(f'{id}_images', btoa(response['attachments'][0]['url']) + ',')
+		
+
+
+async def image(message, event):
+	token = message['token']
+	try:
+		id = message['user']['id']
+	except:
+		id = message['member']['user']['id']
+	message = message['data']['options'][0]['value']
+
+	event.waitUntil(upload_image(token, message, id))
+	return DeferReply()
+
 async def ping(message, event):
 	return Reply(f'Pong!') # Pong!
 
@@ -82,6 +120,9 @@ INVITE_COMMAND = Command("invite", "Get an invite link for the bot to your serve
 PING_COMMAND = Command("ping", "pong", ping)
 CHAT_COMMAND = Command("chat", "Chat with me!", chat)
 REPLY_COMMAND = Command("reply", "Reply to the conversation!", reply)
+IMAGE_COMMAND = Command("image", "Create an image!", image)
+
+
 
 # List used for checking against in index.py
-GLOBAL_COMMANDS = [AWW_COMMAND, INVITE_COMMAND, PING_COMMAND, EARTH_COMMAND, CHAT_COMMAND, REPLY_COMMAND]
+GLOBAL_COMMANDS = [AWW_COMMAND, INVITE_COMMAND, PING_COMMAND, EARTH_COMMAND, CHAT_COMMAND, REPLY_COMMAND, IMAGE_COMMAND]

@@ -13,3 +13,23 @@ async def chatCompletion(prompt):
 	})})
 	reply = await response.json()
 	return reply['choices'][0]['text']
+
+async def generateImage(prompt):
+	headers = {'User-Agent': 'data:positronic:0.0.1', 'content-type': 'application/json', 'Authorization': f'Bearer {OPENAI_KEY}'}
+
+	response = await fetch(f'https://api.openai.com/v1/images/generations', {'method': 'POST', 'headers': headers, 'body': JSON.stringify({
+		"prompt": prompt,
+		"n": 1,
+		"size": "1024x1024",
+		'response_format': 'b64_json'
+	})})
+	reply = await response.json()
+	try:
+		base64_image = reply['data'][0]['b64_json']
+		decoded_image = atob(base64_image)
+		image_data = __new__(Uint8Array(len(decoded_image)))
+		for i in range(len(decoded_image)):
+			image_data[i] = ord(decoded_image[i])
+		return image_data
+	except:
+		return False

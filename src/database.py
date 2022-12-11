@@ -14,3 +14,7 @@ async def get(id):
 	response = await fetch(url)
 	value = await response.json()
 	return value['result']
+
+async def append(id, value):
+	url = f'{UPSTASH_REDIS_URL}/append/{id}/{encodeURIComponent(value)}?_token={UPSTASH_REDIS_TOKEN}' # append
+	return await fetch(url)
