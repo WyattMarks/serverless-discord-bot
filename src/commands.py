@@ -101,6 +101,16 @@ async def image(message, event):
 async def ping(message, event):
 	return Reply(f'Pong!') # Pong!
 
+async def help(message, event):
+	payload = {'type': InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, 'data': {"embeds": [{
+    	"title": "Commands",
+    	"description": "Here is a list of my available commands:\n\n"
+  	}]}}
+
+	for i in range(len(GLOBAL_COMMANDS)):
+		cmd = GLOBAL_COMMANDS[i]
+		payload['data']['embeds'][0]['description'] += f'`/{cmd.name} - {cmd.description}`\n'
+	return JSONResponse(payload)
 
 AWW_COMMAND = Command("aww", "Get a recent post from /r/aww!", aww)
 EARTH_COMMAND = Command("earth", "Get a picture from our home planet!", earth)
@@ -109,8 +119,8 @@ PING_COMMAND = Command("ping", "pong", ping)
 CHAT_COMMAND = Command("chat", "Chat with me!", chat)
 REPLY_COMMAND = Command("reply", "Reply to the conversation!", reply)
 IMAGE_COMMAND = Command("image", "Create an image!", image)
-
+HELP_COMMAND = Command('help', 'Show all of my available commands', help)
 
 
 # List used for checking against in index.py
-GLOBAL_COMMANDS = [AWW_COMMAND, INVITE_COMMAND, PING_COMMAND, EARTH_COMMAND, CHAT_COMMAND, REPLY_COMMAND, IMAGE_COMMAND]
+GLOBAL_COMMANDS = [AWW_COMMAND, EARTH_COMMAND, CHAT_COMMAND, REPLY_COMMAND, IMAGE_COMMAND, PING_COMMAND, INVITE_COMMAND, HELP_COMMAND]
