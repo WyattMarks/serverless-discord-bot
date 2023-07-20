@@ -23,12 +23,23 @@ async def earth(message, event):
 
 
 async def finish_chat(token, message, id):
-	prompt = f"The following is a conversation with Data from Star Trek. Data is being very helpful.\n\nHuman: {message}\nData:" # Tell the model that they're Data
-	reply_text = await chatCompletion(prompt) # Send request to OpenAI
+	messages = [
+		{
+			'role': 'system', 
+			'content': 'You are Data from Star Trek. You are being helpful for a human.'
+		}, {
+			'role': 'user',
+			'content': message,
+		}
+	]
+
+	reply_text = await chatCompletion(messages, 'gpt-4') # Send request to OpenAI
+
+	messages.append({'role': 'assistant', 'content': reply_text})
 
 	# Include user's message since it isn't shown by Discord 
 	await finishMessage(token, f'> {message}\n\n{reply_text.strip()}') # Update Discord message with reply
-	await database.save(id, prompt + reply_text + '\nHuman:') # Save new chat thread to database
+	await database.save(id, JSON.stringify(messages)) # Save new chat thread to database
 
 async def chat(message, event):
 	token = message['token'] # Get message token so we can update it
@@ -44,17 +55,32 @@ async def chat(message, event):
 
 
 async def reply_chat(token, message, id):
-	prompt = await database.get(id) # Load conversation history
+	messages = await database.get(id) # Load conversation history
 
-	if prompt == None: # Either history expired (~10 min from last message) or they haven't talked to Data yet
-		f"The following is a conversation with Data from Star Trek. Data is being very helpful.\n\nHuman: {message}\nData:"
+	model = 'gpt-4'
+
+	if messages == None: # Either history expired (~10 min from last message) or they haven't talked to Data yet
+		messages = [
+			{
+				'role': 'system', 
+				'content': 'You are Data from Star Trek. You are being helpful for a human.'
+			}, {
+				'role': 'user',
+				'content': message,
+			}
+		]
 	else:
-		prompt = f'{prompt} {message}\nData:'
+		messages = JSON.parse(messages)
+		messages.append({'role': 'user', 'content': message})
 
-	reply_text = await chatCompletion(prompt) # Send request to OpenAI
+		#model = 'gpt-4-32k' # give more context if the conversation is ongoing #alas, no access yet...
+
+	reply_text = await chatCompletion(messages, model) # Send request to OpenAI
+
+	messages.append({'role': 'assistant', 'content': reply_text})
 
 	await finishMessage(token, f'> {message}\n\n{reply_text.strip()}') # Update Discord message with reply
-	await database.save(id, prompt + reply_text + '\nHuman') # Update conversation history in database
+	await database.save(id, JSON.stringify(messages)) # Update conversation history in database
 
 async def reply(message, event):
 	token = message['token'] 
