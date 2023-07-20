@@ -1,6 +1,6 @@
 from src.discordinteractions import Reply, JSONResponse, DeferReply, InteractionResponseType, finishMessage, finishMessageWithAttachments
 import src.database as database
-from src.openai import chatCompletion, generateImage
+from src.openai import chatCompletion, generateImage, generateBetterImagePrompt
 from src.reddit import getRedditPosts
 
 
@@ -109,6 +109,21 @@ async def upload_image(token, message, id):
 
 	response = await finishMessageWithAttachments(token, message, files) # Upload response
 	await database.append(f'{id}_images', btoa(response['attachments'][0]['url']) + ',') # Log image link to database
+
+async def describe_upload_image(token, message, id):
+	prompt = await generateBetterImagePrompt(message)
+	if len(prompt) > 1000:
+		prompt = prompt[:995] + '...'
+	image_data = await generateImage(prompt) # request an image from OpenAI with our prompt
+
+	if not image_data: # sometimes OpenAI refuses to generate data because of 'content policy'
+		await finishMessage(token, 'Sorry, I cannot generate images of that nature')
+		return 
+
+	files = [{'data': image_data, 'filename': 'file.png'}] # File list for our attachments function
+
+	response = await finishMessageWithAttachments(token, prompt, files) # Upload response
+	await database.append(f'{id}_images', btoa(response['attachments'][0]['url']) + ',') # Log image link to database
 		
 
 
@@ -121,7 +136,22 @@ async def image(message, event):
 		id = message['member']['user']['id']
 	message = message['data']['options'][0]['value']
 
+	if len(message) > 1000:
+		message = message[:995] + '...'
+
 	event.waitUntil(upload_image(token, message, id))
+	return DeferReply()
+
+async def descriptive_image(message, event):
+	# same method as normal to get id and token and message text, then defer the reply
+	token = message['token']
+	try:
+		id = message['user']['id']
+	except:
+		id = message['member']['user']['id']
+	message = message['data']['options'][0]['value']
+
+	event.waitUntil(describe_upload_image(token, message, id))
 	return DeferReply()
 
 async def ping(message, event):
@@ -145,8 +175,9 @@ PING_COMMAND = Command("ping", "pong", ping)
 CHAT_COMMAND = Command("chat", "Chat with me!", chat)
 REPLY_COMMAND = Command("reply", "Reply to the conversation!", reply)
 IMAGE_COMMAND = Command("image", "Create an image!", image)
+DESCRIPTIVE_IMAGE_COMMAND = Command("descriptive_image", "Generate an image, with the help of Data", descriptive_image)
 HELP_COMMAND = Command('help', 'Show all of my available commands', help)
 
 
 # List used for checking against in index.py
-GLOBAL_COMMANDS = [AWW_COMMAND, EARTH_COMMAND, CHAT_COMMAND, REPLY_COMMAND, IMAGE_COMMAND, PING_COMMAND, INVITE_COMMAND, HELP_COMMAND]
+GLOBAL_COMMANDS = [AWW_COMMAND, EARTH_COMMAND, CHAT_COMMAND, REPLY_COMMAND, IMAGE_COMMAND, DESCRIPTIVE_IMAGE_COMMAND, PING_COMMAND, INVITE_COMMAND, HELP_COMMAND]

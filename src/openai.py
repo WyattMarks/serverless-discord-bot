@@ -35,3 +35,27 @@ async def generateImage(prompt):
 		return image_data
 	except:
 		return False
+
+
+# an attempt to make GPT generate lots of adjectives to feed to dall-e
+async def generateBetterImagePrompt(original_prompt):
+	headers = {'User-Agent': 'data:positronic:0.0.1', 'content-type': 'application/json', 'Authorization': f'Bearer {OPENAI_KEY}'}
+
+	messages = [
+		{
+			'role': 'system',
+			'content': f'Add more descriptive keywords: {original_prompt}'
+		}
+	]
+
+	response = await fetch(f'https://api.openai.com/v1/chat/completions', {'method': 'POST', 'headers': headers, 'body': JSON.stringify({
+		'model': 'gpt-4',
+		'messages': messages, # Give it the prompt
+		'temperature': 0.2, 
+		'max_tokens': 300,
+		'top_p': 1,
+		'frequency_penalty': 0,
+		'presence_penalty': 0.6,
+	})})
+	reply = await response.json()
+	return original_prompt + ': ' + reply['choices'][0]['message']['content']
